@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <title>Pokemon Form</title>
+</head>
+<body>
+    <h1> Enter Pokemon Name</h1>
+    <form method="POST" action="/pokemon">
+        <input type="text" id="Pname" name="name">
+        <input type="submit" value="Submit">
+      </form> 
+</body>
+</html>
+
+{% endblock %}

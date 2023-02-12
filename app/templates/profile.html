@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<head>
+    <title>User Profile</title>
+</head>
+<body>
+    <h1>Welcome, {{ current_user.username }}</h1>
+    <h2>Your Pokedex</h2>
+    <ul>
+    {% for pokemon in my_pokemon %}
+        <p> <img src="{{ pokemon.Front_Shiny }}"></p>
+        <li>{{ pokemon.name }}</li>
+        <li>{{ pokemon.ability}}</li>
+        <li>{{ pokemon.Base_ATK }}</li>
+        <li>{{ pokemon.Base_HP }}</li>
+        <li>{{ pokemon.Base_DEF }}</li>
+    
+    </ul>
+    <a type="button" class="btn btn-danger" href="{{url_for('deletePokemon', pokemon_id=pokemon.pokemon_id)}}">
+        Release
+      </a>
+
+    <!-- add "delete pokemon from pokedex" button here somehow -->
+</body>
+</html>
+
+{% endfor %}
+
+{% endblock %}
