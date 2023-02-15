@@ -6,11 +6,11 @@
 </head>
 <body>
     <h1> Pokemon Data</h1>
-    <form method="GET" action="{{url_for('pokemon')}}">
-        <input type="submit" value="Catch Pokemon" name="catch">
+    <form method="post">  <!--action="{{url_for('pokemon')}}"> -->
+        <input type="submit" value="Catch" name="catch">
     </form>
     <p>Front_Shiny: <img src="{{ pokemon_data['Front_Shiny'] }}"></p>
-    <p>Name: {{ pokemon_data['Name'] }}</p>
+    <p>Name: {{ pokemon_data['name'] }}</p>
     <p>Ability: {{ pokemon_data['Ability'] }}</p>
     <p>Base_ATK: {{ pokemon_data['Base_ATK'] }}</p>
     <p>Base_HP: {{ pokemon_data['Base_HP'] }}</p>
