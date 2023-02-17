@@ -6,7 +6,7 @@
 </head>
 <body>
     <h1> Pokemon Data</h1>
-    <form method="post">  <!--action="{{url_for('pokemon')}}"> -->
+    <form method="post"  action="{{url_for('add_to_pokedex', name = pokemon_data['name'])}}">
         <input type="submit" value="Catch" name="catch">
     </form>
     <p>Front_Shiny: <img src="{{ pokemon_data['Front_Shiny'] }}"></p>

@@ -12,6 +12,11 @@ db = SQLAlchemy()
 def load_user(id):
     return User.query.get(int(id))
 
+user_pokedex = db.Table(
+    "user_pokedex",
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
+    db.Column('pokemon_id', db.Integer, db.ForeignKey('pokemon.pokemon_id'), nullable=False),
+)
 
 
 class User(db.Model, UserMixin):
@@ -20,8 +25,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
-    pokemon = db.relationship("Pokemon", backref="owner", lazy=True)
-    pokedex = db.relationship("Pokedex", back_populates="user")
+    pokemon = db.relationship("Pokemon", secondary = user_pokedex, backref="user_pokedex", lazy=True)
+    
 
     #pokedex = db.relationship("Pokedex", lazy=True)
     # pokemon = db.relationship("Pokemon", secondary = user_pokedex, backref="user_pokedex", lazy=True)
@@ -55,7 +60,7 @@ class Pokemon(db.Model):
     Base_DEF = db.Column(db.Integer, nullable=False)
     # Pokedex = db.relationship("Pokedex", lazy=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
-    pokedex = db.relationship('Pokedex', back_populates="pokemon")
+    
 
 
 
@@ -78,25 +83,27 @@ class Pokemon(db.Model):
         db.session.commit()
 
 
-class Pokedex(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
-    pokemon_id = db.Column(db.Integer, db.ForeignKey('pokemon.pokemon_id'), nullable= False)
-    user = db.relationship("User", back_populates="pokedex")
-    pokemon = db.relationship("Pokemon", back_populates="pokedex")
+# class Pokedex(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
+#     pokemon_id = db.Column(db.Integer, db.ForeignKey('pokemon.pokemon_id'), nullable= False)
+#     user = db.relationship("User", back_populates="pokedex")
+#     pokemon = db.relationship("Pokemon", back_populates="pokedex")
 
 
-    def __init__(self, user_id, pokemon_id):
-        self.user_id = user_id
-        self.pokemon_id = pokemon_id
+#     def __init__(self, user_id, pokemon_id):
+#         self.user_id = user_id
+#         self.pokemon_id = pokemon_id
 
-    def saveToDB(self):
-        db.session.add(self)
-        db.session.commit()
+#     def saveToDB(self):
+#         db.session.add(self)
+#         db.session.commit()
 
-    def deleteFromDB(self):
-        db.session.delete(self)
-        db.session.commit()
+#     def deleteFromDB(self):
+#         db.session.delete(self)
+#         db.session.commit()
+
+#Remake pokedex join table 
 
 
 # class Pokedex(db.Model):
