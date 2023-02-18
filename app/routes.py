@@ -1,8 +1,8 @@
-from flask import Flask, redirect, url_for, render_template, request, jsonify
+from flask import Flask, redirect, url_for, render_template, request, jsonify, flash
 import requests as r
 from app import app
 from app.services import findpokemon
-from .models import Pokemon, User
+from .models import Pokemon, User, user_pokedex
 from flask_login import login_user, logout_user, login_required, current_user
 
 
@@ -71,29 +71,21 @@ def add_to_pokedex(name):
 
     my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
 
-    if len(my_pokemon)+1 <= 5:
+    if len(my_pokemon) <= 5:
         current_user.catch_pokemon(pokemon)
         #flash statement 'pokemon caught'
+        message = flash("Pokemon caught!" )
         return redirect(url_for('profile'))
-
     else:
         print("You cannot catch more pokemon") #could make flash statement
+        message = flash("You cannot catch more pokemon,", category="danger")
         return redirect(url_for('profile'))
 
-    # pokemon = Pokemon.query.filter_by(pokemon_name).first()
-    # current_user.catch_pokemon(pokemon)
-
-    # pokemon_entry = Pokedex(id=current_user.id, pokemon_id=pokemon.pokemon_id)
-    # pokemon_entry.saveToDB()
-    pass
+   
+    return render_template("pokemon.html")
 
 
-# @app.route("/profile")
-# @login_required
-# def profile():
-#     my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
-#     # pokedex_entries = user_pokedex.query.filter_by(user_id=current_user.id).all()
-#     return render_template("profile.html", my_pokemon = my_pokemon)
+
 
 @app.route('/pokemon/<int:pokemon_id>/delete', methods=["GET"])
 def deletePokemon(pokemon_id):

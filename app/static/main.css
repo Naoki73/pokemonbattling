@@ -1,0 +1,33 @@
+.navbar-brand {
+    width: 200px;
+
+}
+@font-face {
+    font-family: Megaten;
+    src: url('Megaten 20XX.ttf');
+}
+body {
+    background-image: url('/static/purpskybg.jpg');
+    color:antiquewhite;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+nav {
+    background-color: black;
+    background-image: url('/static/SMT wallpaper 3.jpg');
+    font-size:4vh;
+}
+
+a {
+    color:antiquewhite !important;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+footer {
+    position: fixed;
+    padding: 10px 10px 0px 10px;
+    bottom: 0;
+    width:100%;
+    height:30px;
+
+}

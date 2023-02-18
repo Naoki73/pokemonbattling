@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+
 <head>
     <title>User Profile</title>
 </head>
@@ -11,7 +23,7 @@
     {% for pokemon in my_pokemon %}
         <p> <img src="{{ pokemon.Front_Shiny }}"></p>
         <li>{{ pokemon.name }}</li>
-        <li>{{ pokemon.ability}}</li>
+        <li>{{ pokemon.Ability}}</li>
         <li>{{ pokemon.Base_ATK }}</li>
         <li>{{ pokemon.Base_HP }}</li>
         <li>{{ pokemon.Base_DEF }}</li>

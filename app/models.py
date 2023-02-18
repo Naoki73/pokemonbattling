@@ -15,7 +15,7 @@ def load_user(id):
 user_pokedex = db.Table(
     "user_pokedex",
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
-    db.Column('pokemon_id', db.Integer, db.ForeignKey('pokemon.pokemon_id'), nullable=False),
+    db.Column('pokemon_id', db.Integer, db.ForeignKey('pokemon.pokemon_id'), nullable=False)
 )
 
 
@@ -44,6 +44,10 @@ class User(db.Model, UserMixin):
         db.session.add(self)
         db.session.commit()
 
+    def catch_pokemon(self, caught_pokemon):
+        self.pokemon.append(caught_pokemon)
+        db.session.commit()
+
    
 
 
@@ -53,7 +57,7 @@ class User(db.Model, UserMixin):
 class Pokemon(db.Model):
     pokemon_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
-    ability = db.Column(db.String(50), nullable=False)
+    Ability = db.Column(db.String(50), nullable=False)
     Front_Shiny = db.Column(db.String(200), nullable=False)
     Base_ATK = db.Column(db.Integer, nullable=False)
     Base_HP = db.Column(db.Integer, nullable=False)
@@ -64,9 +68,9 @@ class Pokemon(db.Model):
 
 
 
-    def __init__(self, name, ability, Front_Shiny, Base_ATK, Base_HP, Base_DEF, user_id):
+    def __init__(self, name, Ability, Front_Shiny, Base_ATK, Base_HP, Base_DEF, user_id):
         self.name = name
-        self.ability = ability
+        self.Ability = Ability
         self.Front_Shiny = Front_Shiny
         self.Base_ATK = Base_ATK
         self.Base_HP = Base_HP
