@@ -26,7 +26,7 @@ def pokemon():
 
         # my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
         new_pokemon = Pokemon(pokemon_data["name"], pokemon_data["Ability"], pokemon_data["Front_Shiny"],
-                              pokemon_data["Base_ATK"], pokemon_data["Base_HP"], pokemon_data["Base_DEF"], current_user.id)
+                              pokemon_data["Base_ATK"], pokemon_data["Base_HP"], pokemon_data["Base_DEF"])
 
         new_pokemon.saveToDB()
         return render_template("pokemon_data.html", pokemon_data = pokemon_data)
@@ -58,7 +58,10 @@ def pokemon():
 @app.route("/profile")
 @login_required
 def profile():
-    my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
+    # my_pokemon = user_pokedex.c.query.filter(user_pokedex.c.user_id == current_user.id).all()
+    my_pokemon = current_user.see_my_pokemon()
+    print(my_pokemon)
+    # my_pokemon = current_user.see_my_pokemon()
     # pokedex_entries = user_pokedex.query.filter_by(user_id=current_user.id).all()
     return render_template("profile.html", my_pokemon=my_pokemon)
 
@@ -69,7 +72,10 @@ def add_to_pokedex(name):
     pokemon = Pokemon.query.filter(Pokemon.name == name).first()
     print("test")
 
-    my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
+    # my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
+    my_pokemon = current_user.see_my_pokemon()
+    print(my_pokemon)
+
 
     if len(my_pokemon) <= 5:
         current_user.catch_pokemon(pokemon)
