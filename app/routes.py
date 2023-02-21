@@ -1,9 +1,14 @@
-from flask import Flask, redirect, url_for, render_template, request, jsonify, flash
+from random import randint
+
 import requests as r
 from app import app
 from app.services import findpokemon
+from flask import (Flask, flash, jsonify, redirect, render_template, request,
+                   url_for)
+from flask_login import current_user, login_required, login_user, logout_user
+
 from .models import Pokemon, User, user_pokedex
-from flask_login import login_user, logout_user, login_required, current_user
+from .forms import AttackForm, UserAttackForm
 
 
 @app.route('/')
@@ -26,43 +31,20 @@ def pokemon():
 
         # my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
         new_pokemon = Pokemon(pokemon_data["name"], pokemon_data["Ability"], pokemon_data["Front_Shiny"],
-                              pokemon_data["Base_ATK"], pokemon_data["Base_HP"], pokemon_data["Base_DEF"])
+                              pokemon_data["Base_ATK"], pokemon_data["Base_HP"], pokemon_data["Base_DEF"], current_user.id)
 
         new_pokemon.saveToDB()
         return render_template("pokemon_data.html", pokemon_data = pokemon_data)
-    # else:
-    #     return render_template("pokemon.html")
-
-        # if request.form.get('catch'):
-        #     if len(my_pokemon)+1 <= 5:
-        #         new_pokemon = Pokemon(pokemon_data["Name"], pokemon_data["Ability"], pokemon_data["Front_Shiny"], pokemon_data["Base_ATK"], pokemon_data["Base_HP"], pokemon_data["Base_DEF"], current_user.id)
-
-        #         new_pokemon.saveToDB()
-
-        #         pokemon = Pokemon.query.filter_by(name=pokemon_name).first()
-
-        #         current_user.catch_pokemon(pokemon)
-
-        #     else:
-        #         print("You cannot catch more pokemon")
-        #         pass
-        # return render_template("pokemon_data.html", pokemon_data = pokemon_data)
-
-    # else:
-    #     return render_template("pokemon.html")
-
-    # else:
+    
     return render_template("pokemon.html")
 
 
 @app.route("/profile")
 @login_required
 def profile():
-    # my_pokemon = user_pokedex.c.query.filter(user_pokedex.c.user_id == current_user.id).all()
+    
     my_pokemon = current_user.see_my_pokemon()
-    print(my_pokemon)
-    # my_pokemon = current_user.see_my_pokemon()
-    # pokedex_entries = user_pokedex.query.filter_by(user_id=current_user.id).all()
+    
     return render_template("profile.html", my_pokemon=my_pokemon)
 
 
@@ -72,18 +54,17 @@ def add_to_pokedex(name):
     pokemon = Pokemon.query.filter(Pokemon.name == name).first()
     print("test")
 
-    # my_pokemon = Pokemon.query.filter(Pokemon.user_id == current_user.id).all()
-    my_pokemon = current_user.see_my_pokemon()
-    print(my_pokemon)
+    
 
-
-    if len(my_pokemon) <= 5:
+    print(pokemon not in current_user.pokemon)
+    print(current_user.pokemon.count())
+    if current_user.pokemon.count() < 5 and pokemon not in current_user.pokemon:
         current_user.catch_pokemon(pokemon)
-        #flash statement 'pokemon caught'
-        message = flash("Pokemon caught!" )
+
+        message = flash("Pokemon caught!")
         return redirect(url_for('profile'))
     else:
-        print("You cannot catch more pokemon") #could make flash statement
+        print("You cannot catch more pokemon")
         message = flash("You cannot catch more pokemon,", category="danger")
         return redirect(url_for('profile'))
 
@@ -96,7 +77,186 @@ def add_to_pokedex(name):
 @app.route('/pokemon/<int:pokemon_id>/delete', methods=["GET"])
 def deletePokemon(pokemon_id):
     pokemon = Pokemon.query.get(pokemon_id)
-
-    pokemon.deleteFromDB()
+    print(pokemon)
+    current_user.delete_my_pokemon(pokemon)
+    
 
     return redirect(url_for('profile'))
+
+@app.route('/battle', methods=["GET", "POST"])
+def battle():
+    form = AttackForm()
+    opponentform = UserAttackForm()
+    pokemons = Pokemon.query.filter_by(user_id = current_user.id)
+
+    if request.method == "POST":
+        if opponentform.validate():
+            opponent_username = opponentform.opponent.data
+            if opponent_username.lower() == "random":
+                opponents = User.query.all()
+                randomindex = randint(0, len(opponents) -1)
+                opponent_username = opponents[randomindex].username
+                while opponent_username == current_user.username:
+                    randomindex = randint(0, len(opponents) -1)
+                    opponent_username = opponents[randomindex].username
+                Opponent = User.query.filter_by(username = opponent_username).first()
+                enemy_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
+                return render_template('battle.html', pokemons = pokemons, form = form, opponentform = opponentform, enemy_team = enemy_team, opponent_username = opponent_username, opponent = opponent )
+            else:
+                Opponent = User.query.filter_by(username = opponent_username).all()
+
+                if Opponent:
+                    enemy_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
+                    if form.validate():
+                        attacker = form.attacker.data.capitalize()
+                        opponent = form.opponent.data.capitalize()
+
+                        pokemon_currentuser = Pokemon.query.filter_by(pokemon_name = attacker).first()
+                        pokemon_opponent = Pokemon.query.filter_by(pokemon_name = opponent).first()
+                        return redirect(url_for('fight'))
+                    return render_template('battle.html', pokemons = pokemons, form = form, opponentform = opponentform, enemy_team = enemy_team, opponent_username = opponent_username, Opponent = Opponent)
+                else:
+                    flash("No such user")
+                    return(redirect(url_for('battle')))
+    return render_template('battle.html', form = form, opponentform = opponentform, pokemons = pokemons)
+
+
+@app.route('/battle/<opponent_username>/fight', methods = ["GET", "POST"])
+def Fight(opponent_username):
+    form = AttackForm()
+    opponentform = UserAttackForm()
+    opponentform.opponent.data = opponent_username
+    pokemons = Pokemon.query.filter_by(user_id = current_user.id).all()
+    opponent_team = Pokemon.query.join(User).filter(User.user_name == opponent_username).all()
+
+    if request.method == "POST":
+        if form.validate():
+            attacker = form.attacker.data
+            opponent = form.opponent.data.capitalize()
+
+            cuserpokemon = Pokemon.query.filter_by(pokemon_name = attacker).first()
+            opponentpokemon = Pokemon.query.filter_by(pokemon_name = opponent).first()
+            if cuserpokemon not in pokemons:
+                form.attacker.data = ''
+            if opponentpokemon not in opponent_team:
+                form.opponent.data = ''
+            if opponentpokemon in opponent_team and cuserpokemon in pokemons:
+                cuserpokemon.attack(opponentpokemon)
+                opponent_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
+                cuserpokemon = Pokemon.query.filter_by(user_id = current_user.id).all()
+                if not opponentpokemon:
+                    form.opponent.data = ''
+
+                if opponent_team:
+                    if len(opponent_team) > 1:
+                        opponent_team[randint(0, len(opponent_team) -1)].attack(cuserpokemon)
+                        pokemons = Pokemon.query.filter_by(user_id = current_user.id).all()
+                        if not cuserpokemon:
+                            form.attacker.data = ''
+
+                    else:
+                        opponent_team[0].attack(cuserpokemon)
+                        pokemons = Pokemon.query.filter_by(user_id == current_user.id).all()
+
+                else:
+                    flash("You won!")
+                    return redirect(url_for('index'))
+                if not pokemons:
+                    flash("You lose")
+                    return redirect(url_for('homepage'))
+            if not cuserpokemon:
+                form.attacker.data = ''
+            if not opponentpokemon:
+                form.opponent.data = ''
+            Opponent = User.query.filter_by(username = opponent_username).first()
+
+            return render_template('battle.html', opponent_team = opponent_team, pokemons = pokemons, cuserpokemon = cuserpokemon, opponentpokemon = opponentpokemon, Opponent=Opponent, form = form)
+        
+        return render_template('battle.html', opponent_team = opponent_team, pokemons = pokemons, cuserpokemon = cuserpokemon, opponentpokemon = opponentpokemon, Opponent=Opponent, form = form)
+    
+    return render_template('battle.html', opponent_team = opponent_team, pokemons = pokemons, cuserpokemon = cuserpokemon, opponentpokemon = opponentpokemon, Opponent=Opponent, form = form)
+
+
+
+
+
+
+    # my_pokemon = current_user.pokemon
+    # other_user = User.query.get(user_id)
+    # opponent = other_user.pokemon
+    # users = User.query.all()
+
+    # mine_alive = []
+    # opps_alive = []
+
+    # for pokemon in my_pokemon:
+    #     mine_alive.append(pokemon)
+
+    # for pokemon in opps_alive:
+    #     opps_alive.append(pokemon)
+
+
+    # A = 0
+    # my_pokemon_wins = 0
+    # opp_wins = 0
+
+    # results = []
+
+    # if len(my_pokemon) > len(opponent):
+    #     while A < len(opponent):
+    #         my_attack = my_pokemon[A].Base_ATK
+    #         my_def = my_pokemon[A].Base_DEF
+    #         my_health = my_pokemon[A].Base_HP
+    #         opp_attack = opponent[A].Base_ATK
+    #         opp_def = opponent[A].Base_DEF
+    #         opp_health = opponent[A].Base_HP
+    #         while True:
+    #             attacker = ['my_pokemon', 'opponent']
+    #             x = random.choice(attacker)
+    #             print(x)
+    #             if x == 'my_pokemon':
+    #                 opp_def -= my_attack
+    #                 if opp_def < 0:
+    #                     opp_health += opp_def
+    #                 if opp_health < 0:
+    #                     results.append(current_user)
+    #                     break
+    #             else:
+    #                 my_def -= opp_attack
+    #                 if my_def < 0:
+    #                     my_health += my_def
+    #                 if my_health < 0:
+    #                     results.append(other_user)
+    #                     break
+    #     print(results)
+
+    #     A += 1
+    #     continue
+
+    # else:
+    #     while A < len(my_pokemon):
+    #         my_attack = my_pokemon[A].Base_ATK
+    #         my_defense = my_pokemon[A].Base_DEF
+    #         my_health = my_pokemon[A].Base_HP
+    #         opp_attack = opponent[A].Base_ATK
+    #         opp_def = opponent[A].Base_DEF
+    #         opp_health = opponent[A].Base_HP
+    #         while True:
+    #             attacker = ['my_pokemon', 'opponent']
+    #             x = random.choice(attacker)
+    #             print(x)
+    #             if x == 'my_pokemon':
+    #                 opp_def -= my_attack
+    #                 if opp_def < 0:
+    #                     opp_health += opp_def
+    #                 if opp_health < 0:
+    #                     results.append(current_user)
+    #                     break
+    #             else:
+    #                 my_def -= opp_attack
+    #                 if my_def < 0:
+    #                     my_health += my_defense
+
+
+
+    return render_template("battle.html")

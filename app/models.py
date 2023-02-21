@@ -73,19 +73,19 @@ class Pokemon(db.Model):
     Base_HP = db.Column(db.Integer, nullable=False)
     Base_DEF = db.Column(db.Integer, nullable=False)
     # Pokedex = db.relationship("Pokedex", lazy=True)
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
     
 
 
 
-    def __init__(self, name, Ability, Front_Shiny, Base_ATK, Base_HP, Base_DEF):
+    def __init__(self, name, Ability, Front_Shiny, Base_ATK, Base_HP, Base_DEF, user_id):
         self.name = name
         self.Ability = Ability
         self.Front_Shiny = Front_Shiny
         self.Base_ATK = Base_ATK
         self.Base_HP = Base_HP
         self.Base_DEF = Base_DEF
-        # self.user_id = user_id
+        self.user_id = user_id
 
 
     def saveToDB(self):

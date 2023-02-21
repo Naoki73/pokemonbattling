@@ -13,6 +13,15 @@ class LoginForm(FlaskForm):
     username = StringField("Username", validators = [DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Log In')
+
+class AttackForm(FlaskForm):
+    Attacker = StringField("Attacker", validators=[DataRequired()], render_kw={'autofocus': True})
+    Opponent = StringField("Opponent", validators=[DataRequired()])
+    submit = SubmitField()
+    
+class UserAttackForm(FlaskForm):
+    opponent = StringField("Opponent username", validators=[DataRequired()], render_kw={'autofocus': True})
+    submit_user = SubmitField()
     
 
 # class AddPokemonForm(FlaskForm):
