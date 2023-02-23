@@ -58,6 +58,8 @@ class User(db.Model, UserMixin):
         My_users_pokemon = Show_pokemon.union(self.pokemon)
         return My_users_pokemon
 
+
+
    
 
 

@@ -8,7 +8,9 @@ from flask import (Flask, flash, jsonify, redirect, render_template, request,
 from flask_login import current_user, login_required, login_user, logout_user
 
 from .models import Pokemon, User, user_pokedex
-from .forms import AttackForm, UserAttackForm
+from .authentication.forms import AttackForm, UserAttackForm
+
+#show all users at once, go to their own profile with like a profile/(otheruser) route function, then just battle from there
 
 
 @app.route('/')
@@ -89,45 +91,39 @@ def battle():
     opponentform = UserAttackForm()
     pokemons = Pokemon.query.filter_by(user_id = current_user.id)
 
+    display_my_pokemon = current_user.see_my_pokemon()
+
     if request.method == "POST":
         if opponentform.validate():
             opponent_username = opponentform.opponent.data
-            if opponent_username.lower() == "random":
-                opponents = User.query.all()
-                randomindex = randint(0, len(opponents) -1)
-                opponent_username = opponents[randomindex].username
-                while opponent_username == current_user.username:
-                    randomindex = randint(0, len(opponents) -1)
-                    opponent_username = opponents[randomindex].username
-                Opponent = User.query.filter_by(username = opponent_username).first()
+            Opponent = User.query.filter_by(username = opponent_username).all()
+
+            if Opponent:
                 enemy_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
-                return render_template('battle.html', pokemons = pokemons, form = form, opponentform = opponentform, enemy_team = enemy_team, opponent_username = opponent_username, opponent = opponent )
+                if form.validate():
+                    attacker = form.attacker.data.capitalize()
+                    opponent = form.opponent.data.capitalize()
+
+                    cuserpokemon = Pokemon.query.filter_by(pokemon_name = attacker).first()
+                    opponent_team = Pokemon.query.filter_by(pokemon_name = opponent).first()
+                    return redirect(url_for('fight'))
+                return render_template('battle.html',form = form, opponentform = opponentform, pokemons = pokemons, opponent_username = opponent_username, Opponent = Opponent, display_my_pokemon = display_my_pokemon)
             else:
-                Opponent = User.query.filter_by(username = opponent_username).all()
+                flash("No such user")
+                return(redirect(url_for('battle')))
+    return render_template('battle.html', form = form, opponentform = opponentform, pokemons = pokemons, display_my_pokemon = display_my_pokemon)
 
-                if Opponent:
-                    enemy_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
-                    if form.validate():
-                        attacker = form.attacker.data.capitalize()
-                        opponent = form.opponent.data.capitalize()
+#have it go from /battle to /battle/<opponent_username> currently does not do that
 
-                        pokemon_currentuser = Pokemon.query.filter_by(pokemon_name = attacker).first()
-                        pokemon_opponent = Pokemon.query.filter_by(pokemon_name = opponent).first()
-                        return redirect(url_for('fight'))
-                    return render_template('battle.html', pokemons = pokemons, form = form, opponentform = opponentform, enemy_team = enemy_team, opponent_username = opponent_username, Opponent = Opponent)
-                else:
-                    flash("No such user")
-                    return(redirect(url_for('battle')))
-    return render_template('battle.html', form = form, opponentform = opponentform, pokemons = pokemons)
-
-
-@app.route('/battle/<opponent_username>/fight', methods = ["GET", "POST"])
-def Fight(opponent_username):
+@app.route('/battle/<opponent_username>', methods = ["GET", "POST"])
+def fight(opponent_username):
     form = AttackForm()
     opponentform = UserAttackForm()
     opponentform.opponent.data = opponent_username
     pokemons = Pokemon.query.filter_by(user_id = current_user.id).all()
-    opponent_team = Pokemon.query.join(User).filter(User.user_name == opponent_username).all()
+    # opponent_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
+    opponent_team = opponent_username.see_my_pokemon()
+    # display_opponent_pokemon = current_user.see_my_pokemon()
 
     if request.method == "POST":
         if form.validate():
@@ -150,6 +146,7 @@ def Fight(opponent_username):
                 if opponent_team:
                     if len(opponent_team) > 1:
                         opponent_team[randint(0, len(opponent_team) -1)].attack(cuserpokemon)
+                        #can perhaps make this just always start from the first pokemon on the list and append each pokemon that dies away to always make the remaining pokemon shift towards the start of the list 
                         pokemons = Pokemon.query.filter_by(user_id = current_user.id).all()
                         if not cuserpokemon:
                             form.attacker.data = ''

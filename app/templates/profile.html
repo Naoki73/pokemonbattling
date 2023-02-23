@@ -22,8 +22,8 @@
     <ul>
     {% for pokemon in my_pokemon %}
         <p> <img src="{{ pokemon.Front_Shiny }}"></p>
-        <li>{{ pokemon.name }}</li>
-        <li>{{ pokemon.Ability}}</li>
+        <li>{{ pokemon.name.title() }}</li>
+        <li>{{ pokemon.Ability.title()}}</li>
         <li>{{ pokemon.Base_ATK }}</li>
         <li>{{ pokemon.Base_HP }}</li>
         <li>{{ pokemon.Base_DEF }}</li>
