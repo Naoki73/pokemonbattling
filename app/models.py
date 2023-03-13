@@ -74,6 +74,7 @@ class Pokemon(db.Model):
     Base_ATK = db.Column(db.Integer, nullable=False)
     Base_HP = db.Column(db.Integer, nullable=False)
     Base_DEF = db.Column(db.Integer, nullable=False)
+
     # Pokedex = db.relationship("Pokedex", lazy=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable = False)
     
@@ -97,6 +98,16 @@ class Pokemon(db.Model):
     def deleteFromDB(self):
         db.session.delete(self)
         db.session.commit()
+
+    def attack(self, new_pokemon):
+        if self.Base_ATK > new_pokemon.Base_DEF:
+            new_pokemon.Base_HP -= self.Base_ATK - new_pokemon.Base_DEF
+            db.session.commit()
+            if new_pokemon.Base_HP < 1:
+                trainer = User.query.get(new_pokemon.user_id)
+                trainer2 = User.query.get(self.user_id)
+                db.session.commit()
+                
 
 
 # class Pokedex(db.Model):

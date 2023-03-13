@@ -87,6 +87,50 @@ def deletePokemon(pokemon_id):
 
 @app.route('/battle', methods=["GET", "POST"])
 def battle():
+
+    current_squad = []
+    opponent_squad = []
+    my_opponent = User.query.filter(User.id != current_user.id).first()
+
+
+
+    for pokemon in current_user.pokemon:
+        print(pokemon.name)
+        dictionary = {}
+        dictionary["name"] = pokemon.name
+        dictionary["Ability"] = pokemon.Ability 
+        dictionary["Front_Shiny"] = pokemon.Front_Shiny
+        dictionary["Base_ATK"] = pokemon.Base_ATK
+        dictionary["Base_HP"] = pokemon.Base_HP
+        dictionary["Base_DEF"] = pokemon.Base_DEF
+        current_squad.append(dictionary)
+
+    # print(current_squad)
+
+    for pokemon in my_opponent.pokemon:
+        print(pokemon.name)
+        dictionary = {}
+        dictionary["name"] = pokemon.name
+        dictionary["Ability"] = pokemon.Ability 
+        dictionary["Front_Shiny"] = pokemon.Front_Shiny
+        dictionary["Base_ATK"] = pokemon.Base_ATK
+        dictionary["Base_HP"] = pokemon.Base_HP
+        dictionary["Base_DEF"] = pokemon.Base_DEF
+        opponent_squad.append(dictionary)
+
+    # print(opponent_squad)
+
+
+    for i in range(len(current_squad)):
+        print(f"current_user.pokemon {current_squad[i]['name']}")
+        print(f"opponent_user.pokemon {opponent_squad[i]['name']}")
+        if current_squad[i]["Base_ATK"] > opponent_squad[i]["Base_ATK"]:
+            print(f"{current_squad[i]['name']} is the winner!")
+        else:
+            print(f"{opponent_squad[i]['name']} is the winner!")
+
+
+
     form = AttackForm()
     opponentform = UserAttackForm()
     pokemons = Pokemon.query.filter_by(user_id = current_user.id)
@@ -94,14 +138,14 @@ def battle():
     display_my_pokemon = current_user.see_my_pokemon()
 
     if request.method == "POST":
-        
+
         if opponentform.validate():
             opponent_username = opponentform.opponent.data
-            Opponent = User.query.filter_by(username = opponent_username).all()
+            Opponent = User.query.filter_by(username = opponent_username).first()
 
             if Opponent:
 
-                enemy_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
+                opponent_pokemons = Pokemon.query.join(User).filter(User.username == opponent_username).all()
 
                 if form.validate():
 
@@ -112,7 +156,7 @@ def battle():
                     opponent_team = Pokemon.query.filter_by(pokemon_name = opponent).first()
                     return redirect(url_for('fight'))
                 
-                return render_template('battle.html',form = form, opponentform = opponentform, pokemons = pokemons, opponent_username = opponent_username, Opponent = Opponent, display_my_pokemon = display_my_pokemon)
+                return render_template('battle.html',form = form, opponentform = opponentform, pokemons = pokemons, opponent_username = opponent_username, Opponent = Opponent, display_my_pokemon = display_my_pokemon, opponent_pokemons = opponent_pokemons)
             
 
             else:
@@ -131,7 +175,7 @@ def fight(opponent_username):
     opponentform.opponent.data = opponent_username
     pokemons = Pokemon.query.filter_by(user_id = current_user.id).all()
     # opponent_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
-    opponent_team = opponent_username.see_my_pokemon()
+    opponent_pokemons = opponent_username.see_my_pokemon()
     # display_opponent_pokemon = current_user.see_my_pokemon()
 
     if request.method == "POST":
@@ -140,36 +184,36 @@ def fight(opponent_username):
             opponent = form.opponent.data
 
             cuserpokemon = Pokemon.query.filter_by(pokemon_name = attacker).first()
-            opponentpokemon = Pokemon.query.filter_by(pokemon_name = opponent).first()
+            opponent_team = Pokemon.query.filter_by(pokemon_name = opponent).first()
 
             if cuserpokemon not in pokemons:
                 form.attacker.data = ''
                 #return empty
-            if opponentpokemon not in opponent_team:
+            if opponent_team not in opponent_pokemons:
                 form.opponent.data = ''
 
 
             #the attacking    
-            if opponentpokemon in opponent_team and cuserpokemon in pokemons:
+            if opponent_team in opponent_pokemons and cuserpokemon in pokemons:
 
-                cuserpokemon.attack(opponentpokemon)
-                opponent_team = Pokemon.query.join(User).filter(User.username == opponent_username).all()
-                cuserpokemon = Pokemon.query.filter_by(user_id = current_user.id).all()
+                cuserpokemon.attack(opponent_team)
+                opponent_pokemons = Pokemon.query.join(User).filter(User.username == opponent_username).all()
+                pokemons = Pokemon.query.filter_by(user_id = current_user.id).all()
 
 
-                if not opponentpokemon:
+                if not opponent_team:
                     form.opponent.data = ''
 
-                if opponent_team:
-                    if len(opponent_team) > 1:
-                        opponent_team[randint(0, len(opponent_team) -1)].attack(cuserpokemon)
+                if opponent_pokemons:
+                    if len(opponent_pokemons) > 1:
+                        opponent_pokemons[randint(0, len(opponent_pokemons) -1)].attack(cuserpokemon)
                         #can perhaps make this just always start from the first pokemon on the list and append each pokemon that dies away to always make the remaining pokemon shift towards the start of the list 
                         pokemons = Pokemon.query.filter_by(user_id = current_user.id).all()
                         if not cuserpokemon:
                             form.attacker.data = ''
 
                     else:
-                        opponent_team[0].attack(cuserpokemon)
+                        opponent_pokemons[0].attack(cuserpokemon)
                         pokemons = Pokemon.query.filter_by(user_id == current_user.id).all()
                         #probably model command error above maybe
 
@@ -183,16 +227,16 @@ def fight(opponent_username):
             if not cuserpokemon:
                 form.attacker.data = ''
 
-            if not opponentpokemon:
+            if not opponent_team:
                 form.opponent.data = ''
 
             Opponent = User.query.filter_by(username = opponent_username).first()
 
-            return render_template('battle.html', opponent_team = opponent_team, pokemons = pokemons, cuserpokemon = cuserpokemon, opponentpokemon = opponentpokemon, Opponent=Opponent, form = form)
+            return render_template('battle.html', opponent_pokemons = opponent_pokemons, pokemons = pokemons, Opponent=Opponent, form = form)
         
-        return render_template('battle.html', opponent_team = opponent_team, pokemons = pokemons, cuserpokemon = cuserpokemon, opponentpokemon = opponentpokemon, Opponent=Opponent, form = form)
+        return render_template('battle.html', opponent_pokemons = opponent_pokemons, pokemons = pokemons, Opponent=Opponent, form = form)
     
-    return render_template('battle.html', opponent_team = opponent_team, pokemons = pokemons, cuserpokemon = cuserpokemon, opponentpokemon = opponentpokemon, Opponent=Opponent, form = form)
+    return render_template('battle.html', opponent_pokemons = opponent_pokemons, pokemons = pokemons, Opponent=Opponent, form = form)
 
 
 
